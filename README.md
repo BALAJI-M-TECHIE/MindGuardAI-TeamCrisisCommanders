@@ -1,46 +1,78 @@
-# MindGuard AI: Behavioral Analysis System
+# MindGuard AI — Stage 1, Module 1 (Standalone Project)
 
-**MindGuard AI** is an AI-powered system designed to detect digital distraction and smartphone addiction risk through behavioral telemetry analysis. This project was developed as a final year project to map raw Android usage patterns to clinical risk categories using the **Smartphone Addiction Scale (SAS)**.
+This is a real, standalone Android Studio project — not a snippet bundle.
+Package: `com.mindguard.app` (app shell) / `com.mindguard.collection` (engine).
 
-## 🚀 Project Overview
-The system aggregates low-level device logs (app launches, screen events, session durations) and uses supervised machine learning to categorize user behavior into three risk levels:
-- **Normal**: Healthy digital habits.
-- **Risk**: Emerging patterns of distraction or overuse.
-- **High Risk**: Compulsive usage patterns aligning with SAS addiction markers.
+## How to open
 
-## 🛠️ Tech Stack
-- **Language**: Python 3.x
-- **AI Framework**: Scikit-Learn (Random Forest & Isolation Forest)
-- **Data Engineering**: Pandas, NumPy
-- **Visualizations**: Matplotlib, Seaborn
-- **Development Environment**: Android Studio / PyCharm
+1. Unzip.
+2. Open the `MindGuardAI/` folder directly in Android Studio ("Open" →
+   select the folder, not a file).
+3. Android Studio will regenerate the Gradle wrapper JAR automatically on
+   first sync (the binary `gradle-wrapper.jar` isn't included in this zip;
+   only `gradle-wrapper.properties` is, which tells Studio which Gradle
+   version to fetch — 8.7).
+4. Let Gradle sync.
 
-## 📋 Project Pipeline
-To run the full AI lifecycle, execute the scripts in the following order:
+## Expected build result right now
 
-1. **`synthetic_data_generator.py`**: Generates 200 days of simulated behavioral logs across diverse user profiles (Healthy, Risk, Addictive).
-2. **`dataset_generation.py`**: Performs feature engineering on raw logs and applies the SAS weighted scoring engine to generate ground-truth labels.
-3. **`model_training.py`**: 
-    - Trains a Supervised **Random Forest Classifier** for risk prediction.
-    - Trains an Unsupervised **Isolation Forest** for sudden distraction (anomaly) detection.
-    - Generates academic plots (`confusion_matrix.png`, `feature_importance.png`).
-4. **`inference_engine.py`**: The live analysis engine that processes behavioral data and provides clinical recommendations.
+**One and only one compile error is expected:** `DatabaseModule.kt` imports
+`com.mindguard.collection.data.local.MindGuardDatabase`, which doesn't exist
+yet. That class arrives in Module 2.
 
-## ⚠️ Environment Setup (NumPy Fix)
-This project requires a stable environment. Due to breaking changes in NumPy 2.0, please ensure you use a compatible version:
+Everything else — manifest, `MindGuardApplication` (`@HiltAndroidApp`),
+`MainActivity` (`@AndroidEntryPoint`), the placeholder layout/theme/strings,
+`CollectionModule.kt`, and all of `util/` — should compile and the app
+should install/launch on a device or emulator (API 29+), showing a plain
+placeholder screen.
 
-```bash
-pip uninstall -y numpy pandas scikit-learn
-pip install "numpy<2.0" pandas scikit-learn matplotlib seaborn
+## Project layout
+
+```
+MindGuardAI/
+├── build.gradle.kts                 root plugin versions
+├── settings.gradle.kts
+├── gradle.properties
+├── gradle/wrapper/gradle-wrapper.properties
+└── app/
+    ├── build.gradle.kts             dependencies (Room, Hilt, WorkManager, Coroutines...)
+    ├── proguard-rules.pro
+    └── src/main/
+        ├── AndroidManifest.xml      declares PACKAGE_USAGE_STATS, QUERY_ALL_PACKAGES
+        │                            (needed by later modules; not used yet)
+        ├── java/com/mindguard/
+        │   ├── app/
+        │   │   ├── MindGuardApplication.kt   @HiltAndroidApp
+        │   │   └── MainActivity.kt           @AndroidEntryPoint, placeholder UI
+        │   └── collection/
+        │       ├── di/
+        │       │   ├── CollectionModule.kt   ✅ implemented
+        │       │   └── DatabaseModule.kt     ⚠️ needs Module 2's MindGuardDatabase
+        │       ├── util/
+        │       │   ├── Constants.kt          ✅ implemented
+        │       │   ├── Result.kt             ✅ implemented
+        │       │   └── DateTimeUtils.kt      ✅ implemented
+        │       ├── data/{local/{entity,dao}, repository, datasource}   empty, Module 2+
+        │       ├── domain/{model, repository, usecase}                 empty, Module 2+
+        │       ├── presentation/dashboard/                             empty, Module 16
+        │       └── worker/                                             empty, later modules
+        └── res/
+            ├── layout/activity_main.xml
+            ├── values/{strings,colors,themes}.xml
+            ├── drawable/ic_launcher_foreground.xml
+            └── mipmap-anydpi-v26/{ic_launcher,ic_launcher_round}.xml
 ```
 
-## 📊 Research Metrics
-The model evaluation produces two key artifacts for research documentation:
-- **Confusion Matrix**: Visualizes the model's accuracy across all three SAS categories.
-- **Feature Importance**: Ranks the behavioral markers (e.g., night usage vs. pickup frequency) that most contribute to addiction risk.
+## Why permissions are declared but unused right now
 
-## 📁 Folder Structure
-- `/data`: Raw CSV logs from device.
-- `/models`: Serialized AI assets (`.pkl`).
-- `/plots`: Academic validation plots.
-- `MindGuard_Feature_Dataset.csv`: The final engineered training set.
+`PACKAGE_USAGE_STATS` and `QUERY_ALL_PACKAGES` are declared in the manifest
+now so it doesn't need repeated edits later, but nothing in Module 1
+actually requests or checks them — that's Module 3 (Permission Flow).
+
+## Next
+
+Module 2: Room Database — all 11 entities (`DeviceInfo`, `InstalledApps`,
+`RawUsageEvents`, `UsageStatistics`, `AppSessions`, `AppTransitions`,
+`CategoryUsage`, `ScreenEvents`, `HourlyUsage`, `DatasetMetadata`,
+`AppLaunchHistory`), their DAOs, repositories, and Room migrations. Once
+that lands, `DatabaseModule.kt` resolves and the whole project builds clean.
